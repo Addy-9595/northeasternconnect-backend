@@ -46,6 +46,7 @@ app.get('/', (req: Request, res: Response) => {
   });
 });
 
+// API route handlers
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/posts', postRoutes);
