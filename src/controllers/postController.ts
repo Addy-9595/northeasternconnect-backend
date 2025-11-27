@@ -46,7 +46,7 @@ export const createPost = async (req: AuthRequest, res: Response): Promise<void>
       return;
     }
 
-    const { title, content, tags, imageUrl } = req.body;
+    const { title, content, tags, imageUrl, images } = req.body;
 
     if (!title || !content) {
       res.status(400).json({ message: 'Title and content are required' });
@@ -59,6 +59,7 @@ export const createPost = async (req: AuthRequest, res: Response): Promise<void>
       author: req.user.userId,
       tags,
       imageUrl,
+      images: images || [],
     });
 
     const populatedPost = await Post.findById(post._id)
@@ -80,7 +81,7 @@ export const updatePost = async (req: AuthRequest, res: Response): Promise<void>
     }
 
     const { id } = req.params;
-    const { title, content, tags, imageUrl } = req.body;
+    const { title, content, tags, imageUrl, images } = req.body;
 
     const post = await Post.findById(id);
 
@@ -99,6 +100,7 @@ export const updatePost = async (req: AuthRequest, res: Response): Promise<void>
     post.content = content || post.content;
     post.tags = tags || post.tags;
     post.imageUrl = imageUrl || post.imageUrl;
+    if (images !== undefined) post.images = images;
 
     await post.save();
 
@@ -194,7 +196,7 @@ export const addComment = async (req: AuthRequest, res: Response): Promise<void>
     }
 
     const { id } = req.params;
-    const { text } = req.body;
+    const { text, parentCommentId } = req.body;
 
     if (!text) {
       res.status(400).json({ message: 'Comment text is required' });
@@ -211,6 +213,7 @@ export const addComment = async (req: AuthRequest, res: Response): Promise<void>
     post.comments.push({
       user: req.user.userId as any,
       text,
+      parentCommentId: parentCommentId || undefined,
       createdAt: new Date(),
     });
 
@@ -228,6 +231,32 @@ export const addComment = async (req: AuthRequest, res: Response): Promise<void>
 };
 
 // Get posts by user
+
+export const uploadPostImages = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    if (!req.user) {
+      res.status(401).json({ message: 'Not authenticated' });
+      return;
+    }
+
+    if (!req.files || !Array.isArray(req.files) || req.files.length === 0) {
+      res.status(400).json({ message: 'No files uploaded' });
+      return;
+    }
+
+    const imageUrls = req.files.map(file => `/uploads/content/${file.filename}`);
+    
+    res.status(200).json({ 
+      message: 'Images uploaded successfully',
+      images: imageUrls
+    });
+  } catch (error: any) {
+    console.error('Upload post images error:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+// Get posts by user
 export const getPostsByUser = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const { userId } = req.params;
@@ -239,6 +268,54 @@ export const getPostsByUser = async (req: AuthRequest, res: Response): Promise<v
     res.status(200).json({ posts });
   } catch (error: any) {
     console.error('Get posts by user error:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+// Delete comment from post
+export const deleteComment = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    if (!req.user) {
+      res.status(401).json({ message: 'Not authenticated' });
+      return;
+    }
+
+    const { id, commentId } = req.params;
+
+    const post = await Post.findById(id);
+
+    if (!post) {
+      res.status(404).json({ message: 'Post not found' });
+      return;
+    }
+
+    const comment = post.comments.find((c: any) => c._id?.toString() === commentId);
+
+    if (!comment) {
+      res.status(404).json({ message: 'Comment not found' });
+      return;
+    }
+
+    // Allow: comment author, post author, or admin
+    const isCommentAuthor = comment.user.toString() === req.user.userId;
+    const isPostAuthor = post.author.toString() === req.user.userId;
+    const isAdmin = req.user.role === 'admin';
+
+    if (!isCommentAuthor && !isPostAuthor && !isAdmin) {
+      res.status(403).json({ message: 'Not authorized to delete this comment' });
+      return;
+    }
+
+    post.comments = post.comments.filter((c: any) => c._id?.toString() !== commentId);
+    await post.save();
+
+    const updatedPost = await Post.findById(id)
+      .populate('author', 'name email profilePicture role')
+      .populate('comments.user', 'name profilePicture');
+
+    res.status(200).json({ message: 'Comment deleted successfully', post: updatedPost });
+  } catch (error: any) {
+    console.error('Delete comment error:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };

@@ -10,6 +10,7 @@ export interface IEvent extends Document {
   maxParticipants?: number;
   tags?: string[];
   imageUrl?: string;
+  images?: string[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -57,6 +58,9 @@ const eventSchema = new Schema<IEvent>(
       type: String,
       default: '',
     },
+    images: [{
+      type: String,
+    }],
   },
   {
     timestamps: true,

@@ -3,6 +3,9 @@ import User from '../models/User';
 import Post from '../models/Post';
 import Event from '../models/Event';
 import { AuthRequest } from '../middleware/auth';
+import path from 'path';
+import fs from 'fs';
+import sharp from 'sharp';
 
 // Get all users
 export const getAllUsers = async (req: AuthRequest, res: Response): Promise<void> => {
@@ -56,11 +59,32 @@ export const updateProfile = async (req: AuthRequest, res: Response): Promise<vo
       return;
     }
 
-    const { name, bio, major, department, profilePicture } = req.body;
+    const { name, bio, major, department, profilePicture, skills } = req.body;
+
+    // Prepare update object
+    const updateData: any = { name, bio, major, department };
+    
+    // Only update profilePicture if provided
+    if (profilePicture !== undefined) {
+      updateData.profilePicture = profilePicture;
+    }
+
+    // Handle skills - parse if it's a string (from form data)
+    if (skills !== undefined) {
+      if (typeof skills === 'string') {
+        try {
+          updateData.skills = JSON.parse(skills);
+        } catch {
+          updateData.skills = skills.split(',').map((s: string) => s.trim()).filter(Boolean);
+        }
+      } else if (Array.isArray(skills)) {
+        updateData.skills = skills;
+      }
+    }
 
     const user = await User.findByIdAndUpdate(
       req.user.userId,
-      { name, bio, major, department, profilePicture },
+      updateData,
       { new: true, runValidators: true }
     ).select('-password');
 
@@ -72,6 +96,60 @@ export const updateProfile = async (req: AuthRequest, res: Response): Promise<vo
     res.status(200).json({ message: 'Profile updated successfully', user });
   } catch (error: any) {
     console.error('Update profile error:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+export const uploadProfilePicture = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    if (!req.user) {
+      res.status(401).json({ message: 'Not authenticated' });
+      return;
+    }
+
+    if (!req.file) {
+      res.status(400).json({ message: 'No file uploaded' });
+      return;
+    }
+
+    const user = await User.findById(req.user.userId);
+    if (user && user.profilePicture && !user.profilePicture.startsWith('http')) {
+      const oldImagePath = path.join(__dirname, '../../uploads/profiles', path.basename(user.profilePicture));
+      if (fs.existsSync(oldImagePath)) {
+        fs.unlinkSync(oldImagePath);
+      }
+    }
+
+    const outputFilename = `profile-${req.user.userId}-${Date.now()}.jpg`;
+    const outputPath = path.join(__dirname, '../../uploads/profiles', outputFilename);
+
+    await sharp(req.file.path)
+      .resize(300, 300, { fit: 'cover' })
+      .jpeg({ quality: 90 })
+      .toFile(outputPath);
+
+    fs.unlinkSync(req.file.path);
+
+    const profilePictureUrl = `/uploads/profiles/${outputFilename}`;
+
+    const updatedUser = await User.findByIdAndUpdate(
+      req.user.userId,
+      { profilePicture: profilePictureUrl },
+      { new: true }
+    ).select('-password');
+
+    if (!updatedUser) {
+      res.status(404).json({ message: 'User not found' });
+      return;
+    }
+
+    res.status(200).json({ 
+      message: 'Profile picture uploaded successfully',
+      user: updatedUser,
+      profilePicture: profilePictureUrl
+    });
+  } catch (error: any) {
+    console.error('Upload profile picture error:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
@@ -164,6 +242,14 @@ export const deleteUser = async (req: AuthRequest, res: Response): Promise<void>
     if (!user) {
       res.status(404).json({ message: 'User not found' });
       return;
+    }
+
+    // Optional: Delete user's profile picture
+    if (user.profilePicture && !user.profilePicture.startsWith('http')) {
+      const imagePath = path.join(__dirname, '../../uploads/profiles', path.basename(user.profilePicture));
+      if (fs.existsSync(imagePath)) {
+        fs.unlinkSync(imagePath);
+      }
     }
 
     res.status(200).json({ message: 'User deleted successfully' });

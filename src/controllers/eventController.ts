@@ -46,7 +46,7 @@ export const createEvent = async (req: AuthRequest, res: Response): Promise<void
       return;
     }
 
-    const { title, description, date, location, maxParticipants, tags, imageUrl } = req.body;
+    const { title, description, date, location, maxParticipants, tags, imageUrl, images } = req.body;
 
     if (!title || !description || !date || !location) {
       res.status(400).json({ message: 'Title, description, date, and location are required' });
@@ -62,6 +62,7 @@ export const createEvent = async (req: AuthRequest, res: Response): Promise<void
       maxParticipants,
       tags,
       imageUrl,
+      images: images || [],
     });
 
     const populatedEvent = await Event.findById(event._id)
@@ -83,7 +84,7 @@ export const updateEvent = async (req: AuthRequest, res: Response): Promise<void
     }
 
     const { id } = req.params;
-    const { title, description, date, location, maxParticipants, tags, imageUrl } = req.body;
+    const { title, description, date, location, maxParticipants, tags, imageUrl, images } = req.body;
 
     const event = await Event.findById(id);
 
@@ -105,6 +106,7 @@ export const updateEvent = async (req: AuthRequest, res: Response): Promise<void
     event.maxParticipants = maxParticipants || event.maxParticipants;
     event.tags = tags || event.tags;
     event.imageUrl = imageUrl || event.imageUrl;
+    if (images !== undefined) event.images = images;
 
     await event.save();
 
@@ -225,8 +227,33 @@ export const leaveEvent = async (req: AuthRequest, res: Response): Promise<void>
   }
 };
 
+export const uploadEventImages = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    if (!req.user) {
+      res.status(401).json({ message: 'Not authenticated' });
+      return;
+    }
+
+    if (!req.files || !Array.isArray(req.files) || req.files.length === 0) {
+      res.status(400).json({ message: 'No files uploaded' });
+      return;
+    }
+
+    const imageUrls = req.files.map(file => `/uploads/content/${file.filename}`);
+    
+    res.status(200).json({ 
+      message: 'Images uploaded successfully',
+      images: imageUrls
+    });
+  } catch (error: any) {
+    console.error('Upload event images error:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
 // Get events by user
 export const getEventsByUser = async (req: AuthRequest, res: Response): Promise<void> => {
+
   try {
     const { userId } = req.params;
 

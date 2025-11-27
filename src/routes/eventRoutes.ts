@@ -8,8 +8,10 @@ import {
   joinEvent,
   leaveEvent,
   getEventsByUser,
+  uploadEventImages,
 } from '../controllers/eventController';
 import { authenticate } from '../middleware/auth';
+import { uploadMultiple } from '../middleware/upload';
 
 const router = express.Router();
 
@@ -17,8 +19,7 @@ const router = express.Router();
 router.get('/', getAllEvents);
 router.get('/:id', getEventById);
 router.get('/user/:userId', getEventsByUser);
-
-// Protected routes
+router.post('/upload-images', authenticate, uploadMultiple.array('images', 10), uploadEventImages);
 router.post('/', authenticate, createEvent);
 router.put('/:id', authenticate, updateEvent);
 router.delete('/:id', authenticate, deleteEvent);

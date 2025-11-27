@@ -1,8 +1,10 @@
 import mongoose, { Document, Schema } from 'mongoose';
 
 export interface IComment {
+  _id?: mongoose.Types.ObjectId;
   user: mongoose.Types.ObjectId;
   text: string;
+  parentCommentId?: mongoose.Types.ObjectId;
   createdAt: Date;
 }
 
@@ -14,10 +16,10 @@ export interface IPost extends Document {
   comments: IComment[];
   tags?: string[];
   imageUrl?: string;
+  images?: string[];
   createdAt: Date;
   updatedAt: Date;
 }
-
 const commentSchema = new Schema<IComment>(
   {
     user: {
@@ -67,6 +69,9 @@ const postSchema = new Schema<IPost>(
       type: String,
       default: '',
     },
+    images: [{
+      type: String,
+    }],
   },
   {
     timestamps: true,

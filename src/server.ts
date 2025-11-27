@@ -2,6 +2,7 @@ import express, { Request, Response } from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import dotenv from 'dotenv';
+import path from 'path';
 import connectDB from './config/db';
 
 // Import routes
@@ -16,6 +17,7 @@ dotenv.config();
 // Initialize express app
 const app = express();
 
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 // Connect to MongoDB
 connectDB();
 
@@ -32,6 +34,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
+// Serve static files from uploads directory
 // Routes
 app.get('/', (req: Request, res: Response) => {
   res.json({ 
@@ -54,6 +57,7 @@ app.use('/api/events', eventRoutes);
 
 // 404 handler
 app.use((req: Request, res: Response) => {
+  console.log('404 for:', req.url);
   res.status(404).json({ message: 'Route not found' });
 });
 
@@ -71,7 +75,7 @@ const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`📍 Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`📁 Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`🌐 API URL: http://localhost:${PORT}`);
 });
 

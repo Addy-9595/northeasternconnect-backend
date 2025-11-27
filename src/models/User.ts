@@ -17,6 +17,7 @@ export interface IUser extends Document {
   major?: string;
   department?: string;
   profilePicture?: string;
+  skills?: string[];  // NEW: Skills array
   followers: mongoose.Types.ObjectId[];
   following: mongoose.Types.ObjectId[];
   isVerified: boolean;
@@ -68,6 +69,10 @@ const userSchema = new Schema<IUser>(
       type: String,
       default: '',
     },
+    skills: [{  // NEW: Skills array
+      type: String,
+      trim: true,
+    }],
     followers: [{
       type: Schema.Types.ObjectId,
       ref: 'User',
