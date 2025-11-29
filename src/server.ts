@@ -25,7 +25,7 @@ connectDB();
 app.use(cors({
   origin: [
     'http://localhost:5173',
-    'https://northeasternconnect.netlify.app',
+    'https://nexusnu.netlify.app',
     process.env.CLIENT_URL || 'http://localhost:5173'
   ],
   credentials: true,
@@ -38,7 +38,7 @@ app.use(cookieParser());
 // Routes
 app.get('/', (req: Request, res: Response) => {
   res.json({ 
-    message: '🚀 Welcome to NortheasternConnect API',
+    message: '🚀 Welcome to NexusNU API',
     version: '1.0.0',
     endpoints: {
       auth: '/api/auth',
