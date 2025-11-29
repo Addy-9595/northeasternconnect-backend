@@ -53,14 +53,20 @@ export const createPost = async (req: AuthRequest, res: Response): Promise<void>
       return;
     }
 
+   const baseURL = process.env.NODE_ENV === 'production' 
+      ? (process.env.BASE_URL || 'https://northeasternconnect-backend.onrender.com')
+      : 'http://localhost:5000';
+    
+    const fullImageUrl = imageUrl?.startsWith('http') ? imageUrl : (imageUrl ? `${baseURL}${imageUrl}` : '');
+
     const post = await Post.create({
       title,
       content,
       author: req.user.userId,
       tags,
-      imageUrl,
-      images: images || [],
+      imageUrl: fullImageUrl,
     });
+
 
     const populatedPost = await Post.findById(post._id)
       .populate('author', 'name email profilePicture role');

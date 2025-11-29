@@ -53,6 +53,12 @@ export const createEvent = async (req: AuthRequest, res: Response): Promise<void
       return;
     }
 
+    const baseURL = process.env.NODE_ENV === 'production' 
+      ? (process.env.BASE_URL || 'https://northeasternconnect-backend.onrender.com')
+      : 'http://localhost:5000';
+    
+    const fullImageUrl = imageUrl?.startsWith('http') ? imageUrl : (imageUrl ? `${baseURL}${imageUrl}` : '');
+
     const event = await Event.create({
       title,
       description,
@@ -61,9 +67,9 @@ export const createEvent = async (req: AuthRequest, res: Response): Promise<void
       organizer: req.user.userId,
       maxParticipants,
       tags,
-      imageUrl,
-      images: images || [],
+      imageUrl: fullImageUrl,
     });
+
 
     const populatedEvent = await Event.findById(event._id)
       .populate('organizer', 'name email profilePicture role');

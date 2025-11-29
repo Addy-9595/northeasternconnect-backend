@@ -130,13 +130,18 @@ export const uploadProfilePicture = async (req: AuthRequest, res: Response): Pro
 
     fs.unlinkSync(req.file.path);
 
-    const profilePictureUrl = `/uploads/profiles/${outputFilename}`;
+    const baseURL = process.env.NODE_ENV === 'production' 
+      ? (process.env.BASE_URL || 'https://northeasternconnect-backend.onrender.com')
+      : 'http://localhost:5000';
+    
+    const profilePictureUrl = `${baseURL}/uploads/profiles/${outputFilename}`;
 
     const updatedUser = await User.findByIdAndUpdate(
       req.user.userId,
       { profilePicture: profilePictureUrl },
       { new: true }
     ).select('-password');
+
 
     if (!updatedUser) {
       res.status(404).json({ message: 'User not found' });
