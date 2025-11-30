@@ -9,10 +9,9 @@ import {
   toggleLike,
   addComment,
   getPostsByUser,
-  uploadPostImages,
 } from '../controllers/postController';
 import { authenticate } from '../middleware/auth';
-import { uploadMultiple } from '../middleware/upload';
+import { upload } from '../middleware/upload';
 
 const router = express.Router();
 
@@ -22,9 +21,9 @@ router.get('/:id', getPostById);
 router.get('/user/:userId', getPostsByUser);
 
 // Protected routes
-router.post('/upload-images', authenticate, uploadMultiple.array('images', 10), uploadPostImages);
+router.post('/', authenticate, upload.array('images', 5), createPost);
 router.post('/', authenticate, createPost);
-router.put('/:id', authenticate, updatePost);
+router.put('/:id', authenticate, upload.array('images', 5), updatePost);
 router.delete('/:id', authenticate, deletePost);
 router.post('/:id/like', authenticate, toggleLike);
 router.post('/:id/comment', authenticate, addComment);

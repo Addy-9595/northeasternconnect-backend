@@ -18,6 +18,7 @@ dotenv.config();
 const app = express();
 
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+app.use('/uploads/content', express.static(path.join(__dirname, '../uploads/content')));
 // Connect to MongoDB
 connectDB();
 

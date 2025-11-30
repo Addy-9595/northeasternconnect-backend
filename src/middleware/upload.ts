@@ -8,15 +8,25 @@ if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
 
+// Create content uploads directory
+const contentUploadDir = path.join(__dirname, '../../uploads/content');
+if (!fs.existsSync(contentUploadDir)) {
+  fs.mkdirSync(contentUploadDir, { recursive: true });
+}
+
 // Configure storage
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, uploadDir);
+    if (file.fieldname === 'images') {
+      cb(null, contentUploadDir);
+    } else {
+      cb(null, uploadDir);
+    }
   },
   filename: (req, file, cb) => {
-    // Create unique filename: userId-timestamp-originalname
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, `profile-${uniqueSuffix}${path.extname(file.originalname)}`);
+    const prefix = file.fieldname === 'images' ? 'content' : 'profile';
+    cb(null, `${prefix}-${uniqueSuffix}${path.extname(file.originalname)}`);
   }
 });
 

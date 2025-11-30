@@ -46,20 +46,30 @@ export const createPost = async (req: AuthRequest, res: Response): Promise<void>
       return;
     }
 
-    const { title, content, tags, imageUrl, images } = req.body;
+    const { title, content, tags } = req.body;
 
     if (!title || !content) {
       res.status(400).json({ message: 'Title and content are required' });
       return;
     }
 
+    const baseURL = process.env.NODE_ENV === 'production' 
+      ? (process.env.BASE_URL || 'https://northeasternconnect-backend.onrender.com')
+      : 'http://localhost:5000';
+
+     const files = req.files as Express.Multer.File[];
+    const images = files?.map(file => `${baseURL}/uploads/content/${file.filename}`) || [];
+    const imageUrl = images[0] || '';
+
+    const tagsArray = typeof tags === 'string' ? JSON.parse(tags) : tags;
+
     const post = await Post.create({
       title,
       content,
       author: req.user.userId,
-      tags,
+      tags: tagsArray,
       imageUrl,
-      images: images || [],
+      images,
     });
 
     const populatedPost = await Post.findById(post._id)
@@ -71,7 +81,6 @@ export const createPost = async (req: AuthRequest, res: Response): Promise<void>
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
-
 // Update post
 export const updatePost = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
@@ -81,7 +90,7 @@ export const updatePost = async (req: AuthRequest, res: Response): Promise<void>
     }
 
     const { id } = req.params;
-    const { title, content, tags, imageUrl, images } = req.body;
+    const { title, content, tags } = req.body;
 
     const post = await Post.findById(id);
 
@@ -90,17 +99,28 @@ export const updatePost = async (req: AuthRequest, res: Response): Promise<void>
       return;
     }
 
-    // Check if user is the author
     if (post.author.toString() !== req.user.userId) {
       res.status(403).json({ message: 'You can only update your own posts' });
       return;
     }
 
+    const baseURL = process.env.NODE_ENV === 'production' 
+      ? (process.env.BASE_URL || 'https://northeasternconnect-backend.onrender.com')
+      : 'http://localhost:5000';
+
+    const files = req.files as Express.Multer.File[];
+    if (files && files.length > 0) {
+      const newImages = files.map(file => `${baseURL}/uploads/content/${file.filename}`);
+      post.images = newImages;
+      post.imageUrl = newImages[0];
+    }
+
     post.title = title || post.title;
     post.content = content || post.content;
-    post.tags = tags || post.tags;
-    post.imageUrl = imageUrl || post.imageUrl;
-    if (images !== undefined) post.images = images;
+    
+    if (tags) {
+      post.tags = typeof tags === 'string' ? JSON.parse(tags) : tags;
+    }
 
     await post.save();
 
@@ -113,6 +133,7 @@ export const updatePost = async (req: AuthRequest, res: Response): Promise<void>
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
+
 
 // Delete post
 export const deletePost = async (req: AuthRequest, res: Response): Promise<void> => {
