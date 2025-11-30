@@ -10,12 +10,28 @@ export const getAllPosts = async (req: AuthRequest, res: Response): Promise<void
       .populate('comments.user', 'name profilePicture')
       .sort({ createdAt: -1 });
 
-    res.status(200).json({ posts });
+    const baseURL = process.env.NODE_ENV === 'production' 
+      ? (process.env.BASE_URL || 'https://northeasternconnect-backend.onrender.com')
+      : 'http://localhost:5000';
+
+    const postsWithFixedUrls = posts.map(post => {
+      const postObj = post.toObject();
+      if (postObj.imageUrl) {
+        postObj.imageUrl = postObj.imageUrl.replace('http://localhost:5000', baseURL);
+      }
+      if (postObj.images) {
+        postObj.images = postObj.images.map((img: string) => img.replace('http://localhost:5000', baseURL));
+      }
+      return postObj;
+    });
+
+    res.status(200).json({ posts: postsWithFixedUrls });
   } catch (error: any) {
     console.error('Get all posts error:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
+
 
 // Get post by ID
 export const getPostById = async (req: AuthRequest, res: Response): Promise<void> => {
@@ -31,7 +47,19 @@ export const getPostById = async (req: AuthRequest, res: Response): Promise<void
       return;
     }
 
-    res.status(200).json({ post });
+    const baseURL = process.env.NODE_ENV === 'production' 
+      ? (process.env.BASE_URL || 'https://northeasternconnect-backend.onrender.com')
+      : 'http://localhost:5000';
+
+    const postObj = post.toObject();
+    if (postObj.imageUrl) {
+      postObj.imageUrl = postObj.imageUrl.replace('http://localhost:5000', baseURL);
+    }
+    if (postObj.images) {
+      postObj.images = postObj.images.map((img: string) => img.replace('http://localhost:5000', baseURL));
+    }
+
+    res.status(200).json({ post: postObj });
   } catch (error: any) {
     console.error('Get post by ID error:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
