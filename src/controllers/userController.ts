@@ -1,3 +1,5 @@
+// backend/src/controllers/userController.ts
+
 import { Response } from 'express';
 import User from '../models/User';
 import Post from '../models/Post';
@@ -33,13 +35,17 @@ export const getUserById = async (req: AuthRequest, res: Response): Promise<void
       return;
     }
 
-    // Get user's posts
+    console.log('📊 PROFILE FETCH:', {
+      userId: id,
+      followersCount: user.followers.length,
+      followersIds: user.followers.map((f: any) => f._id.toString())
+    });
+
     const posts = await Post.find({ author: id })
       .populate('author', 'name email profilePicture')
       .sort({ createdAt: -1 })
       .limit(10);
 
-    // Get user's events
     const events = await Event.find({ organizer: id })
       .sort({ date: 1 })
       .limit(10);
@@ -177,19 +183,19 @@ export const followUser = async (req: AuthRequest, res: Response): Promise<void>
     const { id } = req.params;
     const currentUserId = req.user.userId;
 
+    console.log('🔵 FOLLOW REQUEST:', { followerId: currentUserId, targetId: id });
+
     if (id === currentUserId) {
       res.status(400).json({ message: 'You cannot follow yourself' });
       return;
     }
 
-    // Add to following list
     const currentUser = await User.findByIdAndUpdate(
       currentUserId,
       { $addToSet: { following: id } },
       { new: true }
     );
 
-    // Add to followers list
     const targetUser = await User.findByIdAndUpdate(
       id,
       { $addToSet: { followers: currentUserId } },
@@ -200,6 +206,12 @@ export const followUser = async (req: AuthRequest, res: Response): Promise<void>
       res.status(404).json({ message: 'User not found' });
       return;
     }
+
+    console.log('✅ FOLLOW DB RESULT:', {
+      targetUserId: id,
+      followersCount: targetUser.followers.length,
+      followersArray: targetUser.followers
+    });
 
     res.status(200).json({ message: 'User followed successfully' });
   } catch (error: any) {
@@ -219,14 +231,14 @@ export const unfollowUser = async (req: AuthRequest, res: Response): Promise<voi
     const { id } = req.params;
     const currentUserId = req.user.userId;
 
-    // Remove from following list
+    console.log('🔴 UNFOLLOW REQUEST:', { unfollowerId: currentUserId, targetId: id });
+
     const currentUser = await User.findByIdAndUpdate(
       currentUserId,
       { $pull: { following: id } },
       { new: true }
     );
 
-    // Remove from followers list
     const targetUser = await User.findByIdAndUpdate(
       id,
       { $pull: { followers: currentUserId } },
@@ -237,6 +249,12 @@ export const unfollowUser = async (req: AuthRequest, res: Response): Promise<voi
       res.status(404).json({ message: 'User not found' });
       return;
     }
+
+    console.log('✅ UNFOLLOW DB RESULT:', {
+      targetUserId: id,
+      followersCount: targetUser.followers.length,
+      followersArray: targetUser.followers
+    });
 
     res.status(200).json({ message: 'User unfollowed successfully' });
   } catch (error: any) {
