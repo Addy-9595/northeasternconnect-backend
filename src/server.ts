@@ -10,6 +10,9 @@ import authRoutes from './routes/authRoutes';
 import userRoutes from './routes/userRoutes';
 import postRoutes from './routes/postRoutes';
 import eventRoutes from './routes/eventRoutes';
+import skillsRoutes from './routes/skillsRoutes';
+import certificationRoutes from './routes/certificationRoutes';
+import chatRoutes from './routes/chatRoutes';
 
 // Load environment variables
 dotenv.config();
@@ -55,6 +58,9 @@ app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/posts', postRoutes);
 app.use('/api/events', eventRoutes);
+app.use('/api/skills', skillsRoutes);
+app.use('/api/certifications', certificationRoutes);
+app.use('/api/chat', chatRoutes);
 
 // 404 handler
 app.use((req: Request, res: Response) => {

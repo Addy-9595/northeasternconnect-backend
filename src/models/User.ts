@@ -18,6 +18,15 @@ export interface IUser extends Document {
   department?: string;
   profilePicture?: string;
   skills?: string[];  // NEW: Skills array
+  certifications: [{
+  platform: { type: String },
+  certificate_name: { type: String },
+  issuer: { type: String },
+  completion_date: { type: String },
+  credential_id: { type: String },
+  credential_url: { type: String },
+  verified: { type: Boolean },
+}],
   followers: mongoose.Types.ObjectId[];
   following: mongoose.Types.ObjectId[];
   isVerified: boolean;
