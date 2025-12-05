@@ -20,6 +20,7 @@ export interface IPost extends Document {
   createdAt: Date;
   updatedAt: Date;
 }
+
 const commentSchema = new Schema<IComment>(
   {
     user: {
@@ -31,6 +32,10 @@ const commentSchema = new Schema<IComment>(
       type: String,
       required: [true, 'Comment text is required'],
       maxlength: [500, 'Comment cannot exceed 500 characters'],
+    },
+    parentCommentId: {
+      type: String || undefined,
+      maxlength: [500, 'Reply cannot exceed 500 characters'],
     },
   },
   {
