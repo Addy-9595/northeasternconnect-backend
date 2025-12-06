@@ -13,6 +13,7 @@ import eventRoutes from './routes/eventRoutes';
 import skillsRoutes from './routes/skillsRoutes';
 import certificationRoutes from './routes/certificationRoutes';
 import chatRoutes from './routes/chatRoutes';
+import jobCommentRoutes from './routes/jobCommentRoutes';
 
 // Load environment variables
 dotenv.config();
@@ -61,6 +62,7 @@ app.use('/api/events', eventRoutes);
 app.use('/api/skills', skillsRoutes);
 app.use('/api/certifications', certificationRoutes);
 app.use('/api/chat', chatRoutes);
+app.use('/api/job-comments', jobCommentRoutes);
 
 // 404 handler
 app.use((req: Request, res: Response) => {
